@@ -1,10 +1,7 @@
 import java.io.*;
-import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.util.*;
-import java.util.stream.*;
-import java.util.Arrays;
 
 /**
  * The responder class represents a response generator object.
@@ -27,10 +24,8 @@ public class Responder
     // Default responses to use if we don't recognise a word.
     private ArrayList<String> defaultResponses;
     // The name of the file containing the default responses.
-    private static final String FILE_OF_DEFAULT_RESPONSES = "default2.txt";
-    // The name of the file containing the keys and values needed for the response map.
-    private static final String FILE_OF_KEYS_AND_VALUES = "keyvalue.txt";
-        
+    private static final String FILE_OF_DEFAULT_RESPONSES = "default.txt";
+    private static final String FILE_OF_MAPPED_RESPONSES = "hashmap.txt";
     private Random randomGenerator;
 
     /**
@@ -40,8 +35,8 @@ public class Responder
     {
         responseMap = new HashMap<>();
         defaultResponses = new ArrayList<>();
-        fillResponseMap2(); //needed a new method
-        fillDefaultResponses2(); // needed a new method
+        fillResponseMap();
+        fillDefaultResponses();
         randomGenerator = new Random();
     }
 
@@ -73,159 +68,63 @@ public class Responder
      */
     private void fillResponseMap()
     {
-        responseMap.put("crash", 
-                        "Well, it never crashes on our system. It must have something\n" +
-                        "to do with your system. Tell me more about your configuration.");
-        responseMap.put("crashes", 
-                        "Well, it never crashes on our system. It must have something\n" +
-                        "to do with your system. Tell me more about your configuration.");
-        responseMap.put("slow", 
-                        "I think this has to do with your hardware. Upgrading your processor\n" +
-                        "should solve all performance problems. Have you got a problem with\n" +
-                        "our software?");
-        responseMap.put("performance", 
-                        "Performance was quite adequate in all our tests. Are you running\n" +
-                        "any other processes in the background?");
-        responseMap.put("bug", 
-                        "Well, you know, all software has some bugs. But our software engineers\n" +
-                        "are working very hard to fix them. Can you describe the problem a bit\n" +
-                        "further?");
-        responseMap.put("buggy", 
-                        "Well, you know, all software has some bugs. But our software engineers\n" +
-                        "are working very hard to fix them. Can you describe the problem a bit\n" +
-                        "further?");
-        responseMap.put("windows", 
-                        "This is a known bug to do with the Windows operating system. Please\n" +
-                        "report it to Microsoft. There is nothing we can do about this.");
-        responseMap.put("macintosh", 
-                        "This is a known bug to do with the Mac operating system. Please\n" +
-                        "report it to Apple. There is nothing we can do about this.");
-        responseMap.put("expensive", 
-                        "The cost of our product is quite competitive. Have you looked around\n" +
-                        "and really compared our features?");
-        responseMap.put("installation", 
-                        "The installation is really quite straight forward. We have tons of\n" +
-                        "wizards that do all the work for you. Have you read the installation\n" +
-                        "instructions?");
-        responseMap.put("memory", 
-                        "If you read the system requirements carefully, you will see that the\n" +
-                        "specified memory requirements are 1.5 giga byte. You really should\n" +
-                        "upgrade your memory. Anything else you want to know?");
-        responseMap.put("linux", 
-                        "We take Linux support very seriously. But there are some problems.\n" +
-                        "Most have to do with incompatible glibc versions. Can you be a bit\n" +
-                        "more precise?");
-        responseMap.put("bluej", 
-                        "Ahhh, BlueJ, yes. We tried to buy out those guys long ago, but\n" +
-                        "they simply won't sell... Stubborn people they are. Nothing we can\n" +
-                        "do about it, I'm afraid.");
-    }
-    
-    private void fillResponseMap2()
-    {
-        // for reference in populating a map:
-        responseMap.put("crash", 
-                        "Well, it never crashes on our system. It must have something\n" +
-                        "to do with end of your system. Tell me more about your configuration.");
-        responseMap.put("crashes", 
-                        "Well, it never does crash on our system. It must have something\n" +
-                        "to do with your system. Tell me more about your configuration.");
-        
         Charset charset = Charset.forName("US-ASCII");
-        Path path = Paths.get(FILE_OF_KEYS_AND_VALUES);
-        try (Stream<String> stringStream = Files.lines(path, charset))
-        {
-            //converted the Stream of lines into a List
-            ArrayList<String> dataFromFile = new ArrayList<String>(stringStream.collect(Collectors.toList()));
-            
-            //population procedure depends on the list ending with an empty String
-            //the Stream would have eliminated any empty String line at the
-            //end of the file. Therefore, it will make sure the list ends with an empty String
-            dataFromFile.add("");
-            
-            //need to create an Iterator
-            Iterator<String> it = dataFromFile.iterator();
-            
-            //will initialize a newValue variable to the empty String
-            String newValue = "";
-            
-            //will initialize a keyList variable to hold key Strings
-            List<String> keyList = new ArrayList<String>();
-            
-            //will initialize a flag variable to aid in the iteration process
-            boolean gotKeys = false;
-            
-            while(it.hasNext())
-            {
-                String text = it.next();
-                
-                if(!gotKeys)    //are at the a key element
+        Path path = Paths.get(FILE_OF_MAPPED_RESPONSES);
+        try (BufferedReader reader = Files.newBufferedReader(path, charset)) {
+            String line = reader.readLine();
+            String[] keyArray = null;
+            String response = null;
+            while(line != null) {
+                if (!(line.trim().equals("")))
+                    if (response == null)
+                        if (keyArray == null)
+                            keyArray = line.split(", ");
+                        else
+                            response = line;
+                    else
+                        response = response + " " + line;
+                else
                 {
-                    //will separate the string into individual values, using the comma as the delimeter
-                    String keyArray[] = text.split(",");
-                    
-                    //will convert the array to an ArrayList
-                    keyList = Arrays.asList(keyArray);
-                    
-                    //will auto set the flag
-                    gotKeys = true;
+                    for (String key : keyArray)
+                        responseMap.put(key, response);
+                    keyArray = null;
+                    response = null;
                 }
-                
-                else        // not at a key element
-                {
-                    if(!text.equals(""))    
-                    {
-                        newValue += text + "\n";
-                    }
-                    else        
-                    {
-                        if(newValue.length() > 0)
-                        {
-                            // add a value to the responseMap for each key in 
-                            // the keyList,therefore by trimming any whitespace from the
-                            // key(s) and the value
-                            for(String key : keyList)
-                            {
-                                responseMap.put(key.trim(), newValue.trim());
-                            }
-                        }
-                        
-                        // will reset the newValue String to empty
-                        newValue = "";
-                        
-                        //will auto reset the flag
-                        gotKeys = false;
-                    }
-                }
+                line = reader.readLine();
             }
         }
-        catch(FileNotFoundException e) 
-        {
-            System.err.println("Cannot open file " + FILE_OF_KEYS_AND_VALUES);
+        catch(FileNotFoundException e) {
+            System.err.println("Unable to open " + FILE_OF_MAPPED_RESPONSES);
         }
-        catch(IOException e) 
-        {
-            System.err.println("Cannot read file " +
-                               FILE_OF_KEYS_AND_VALUES);
+        catch(IOException e) {
+            System.err.println("A problem was encountered reading " +
+                               FILE_OF_MAPPED_RESPONSES);
         }
     }
 
     /**
      * Build up a list of default responses from which we can pick
      * if we don't know what else to say.
-     * 
-     * This is the original fillDefaultResponses, 
-     * I used it as a reference for the new one.
      */
     private void fillDefaultResponses()
     {
         Charset charset = Charset.forName("US-ASCII");
         Path path = Paths.get(FILE_OF_DEFAULT_RESPONSES);
         try (BufferedReader reader = Files.newBufferedReader(path, charset)) {
-            String response = reader.readLine();
-            while(response != null) {
-                defaultResponses.add(response);
-                response = reader.readLine();
+            String line = reader.readLine();
+            String response = null;
+            while(line != null) {
+                if (!(line.trim().equals("")))
+                    if (response == null)
+                        response = line;
+                    else
+                        response = response + " " + line;
+                else
+                {
+                    defaultResponses.add(response);
+                    response = null;
+                }
+                line = reader.readLine();
             }
         }
         catch(FileNotFoundException e) {
@@ -241,130 +140,6 @@ public class Responder
         }
     }
 
-    /**
-     * Build up a list of default responses from which we can pick if cant/don't know what else to say.
-     * This method parses an input text file in which responses are 
-     * separated by a blank line in the file. A single response may also
-     * take up multiple lines in the file.
-     */
-    private void fillDefaultResponses2()
-    {
-        Charset charset = Charset.forName("US-ASCII");
-        Path path = Paths.get(FILE_OF_DEFAULT_RESPONSES);
-        
-        try (Stream<String> stringStream = Files.lines(path, charset))
-        {
-            ArrayList<String> dataFromFile = new ArrayList<String>(
-                stringStream.collect(Collectors.toList()));
-            
-            // the population procedure depends on the list ending with an empty String
-            // but the Stream would have eliminated any empty String line at the
-            // end of the file. Therefore, make sure the list ends with an empty String
-            dataFromFile.add("");
-            
-            //create an Iterator
-            Iterator<String> it = dataFromFile.iterator();
-            
-            // initialize a newResponse variable to the empty String
-            String newResponse = "";
-            
-            while(it.hasNext())
-            {
-                String text = it.next();
-                if(!text.equals(""))    
-                {
-                    //need to concatenate the next list element to the newResponse String
-                    newResponse += text + " ";
-                }
-                else    
-                {
-                    // this is where the method depends on the list ending with
-                    // the empty String
-                    // make sure that the newResponse String isn't empty
-                    if(newResponse.length() > 0)
-                    {
-                        // trim any trailing whitespace from the local String
-                        // and add the local String to defaultResponses
-                        defaultResponses.add(newResponse.trim());
-                    }
-                    
-                    //will reset the newResponse String to empty
-                    newResponse = "";
-                    
-                    // move the pointer to the next element in the list
-                    // the nature of the while loop handles this movement
-                }
-            }
-        }
-        catch(FileNotFoundException e) 
-        {
-            System.err.println("Cannot open file location" + FILE_OF_DEFAULT_RESPONSES);
-        }
-        catch(IOException e) {
-            System.err.println("Cannot read file " +
-                               FILE_OF_DEFAULT_RESPONSES);
-        }
-        // Make sure we have at least one response.
-        if(defaultResponses.size() == 0) 
-        {
-            defaultResponses.add("Please Elaborate?");
-        }
-    }
-    
-    /**
-     * Build up a list of default responses from which we can pick
-     * if we don't know what else to say.
-     * This method does explore the use of streams and the use lambdas and is not 
-     * properly functional. 
-     * It remains here for future code exploration and debugging.
-     */
-    private void fillDefaultResponsesLambdaVersion()
-    {
-        Charset charset = Charset.forName("US-ASCII");
-        Path path = Paths.get(FILE_OF_DEFAULT_RESPONSES);
-        
-        try (Stream<String> responseStream = Files.lines(path, charset))
-        {
-            responseStream.forEach(
-                (response) -> 
-                {
-                    String nextResponse = new String("");
-                    if(!response.equals(""))
-                    {
-                        nextResponse += response + " ";
-                    }
-                    if(!nextResponse.equals(""))
-                    {
-                        if(!nextResponse.equals(null))
-                        {
-                            defaultResponses.add(nextResponse);
-                        }
-                    }
-                    nextResponse = "";
-                }
-            );
-            // this arrayList should now have all the responses from the file when used
-            // this does however only works for single line responses only
-            // I will explore this more in my own time where there isn't the pressure
-            // to make a deadline
-        }
-        catch(FileNotFoundException e) 
-        {
-            System.err.println("Cannot open file" + FILE_OF_DEFAULT_RESPONSES);
-        }
-        catch(IOException e) 
-        {
-            System.err.println("Cannot read file" +
-                               FILE_OF_DEFAULT_RESPONSES);
-        }
-        // Make sure we have at least one response.
-        if(defaultResponses.size() == 0) 
-        {
-            defaultResponses.add("Please Elaborate?");
-        }
-    }
-    
-    
     /**
      * Randomly select and return one of the default responses.
      * @return     A random default response
